@@ -9,27 +9,52 @@ contract Participant {
 
     Game game;
 
-    constructor(Auction _auction) {
-        setAuction(_auction);
+    constructor(Game _game) {
+        setGame(_game);
     }
 
-    function setAuction(Auction _auction) public {
-        auction = _auction;
-    }
-
-    //wrapped call
-    function callFinalize() public returns (bool success) {
-        (success, ) = address(auction).call{gas:200000}(abi.encodeWithSignature("finalize()"));
+    function setGame(Game _game) public {
+        game = _game;
     }
 
     //wrapped call
-    function callRefund() public returns (bool success)  {
-        (success, ) = address(auction).call{gas:200000}(abi.encodeWithSignature("refund()"));
+    function hit() public returns (bool success) {
+        (success, ) = address(game).call{gas:200000}(abi.encodeWithSignature("hit()"));
+    }
+
+    //wrapped call
+    function join() public returns (bool success)  {
+        (success, ) = address(game).call{gas:200000}(abi.encodeWithSignature("joinGame()"));
+    }
+
+    //wrapped call
+    function stand() public returns (bool success)  {
+        (success, ) = address(game).call{gas:200000}(abi.encodeWithSignature("stand()"));
+    }
+
+    //wrapped call
+    function doublDown() public returns (bool success)  {
+        (success, ) = address(game).call{gas:200000}(abi.encodeWithSignature("doubleDown()"));
+    }
+
+    //wrapped call
+    function reveal() public returns (bool success)  {
+        (success, ) = address(game).call{gas:200000}(abi.encodeWithSignature("reveal()"));
+    }
+
+    //wrapped call
+    function getPoints() public returns (bool success)  {
+        (success, ) = address(game).call{gas:200000}(abi.encodeWithSignature("getPoints()"));
+    }
+
+    //wrapped call
+    function startGame() public returns (bool success)  {
+        (success, ) = address(game).call{gas:200000}(abi.encodeWithSignature("startGame()"));
     }
 
     //wrapped call
     function callWithdraw() public returns (bool success)  {
-        (success, ) = address(auction).call{gas:200000}(abi.encodeWithSignature("withdraw()"));
+        (success, ) = address(game).call{gas:200000}(abi.encodeWithSignature("withdraw()"));
     }
 
     //can receive money

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-// import "./Deck.sol";
+import "./Card.sol";
 
 contract Game {
     // Game info 
@@ -81,6 +81,7 @@ contract Game {
     // startGame - allows the dealer to start the game after someone joined
     function startGame () public {
         require(!isStart, "The game has started.");
+        require(playerNum > 0, "Not enough players");
         require( getTime() - lastJoin == 3, "Wait until more players join the game.");
         while (playerNum > 0) 
         {   

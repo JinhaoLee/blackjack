@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "./TestFramework.sol";
-import "./ArbitrationTest.sol";
+import "./GameTest.sol";
 
 contract TestLogger {
 
@@ -48,17 +48,8 @@ contract TestSuite {
     function ArbitrationTests() public {
         ArbitrationTest t = new ArbitrationTest();
         payable(t).transfer(1 ether);
-        string[10] memory tests = [
-            "testCreateContracts()",
-            "testEarlyFinalize()",
-            "testEarlyRefund()",
-            "testUnauthorizedRefund()",
-            "testUnauthorizedFinalize()",
-            "testJudgeFinalize()",
-            "testWinnerFinalize()",
-            "testPublicFinalize()",
-            "testJudgeRefund()",
-            "testSellerRefund()"
+        string[1] memory tests = [
+            "testCreateContracts()"
         ];
         TestLogger logger = new TestLogger();
         for (uint i = 0; i < tests.length; i++)
@@ -69,17 +60,8 @@ contract TestSuite {
     function EnglishAuctionTests() public {
         ArbitrationTest t = new ArbitrationTest();
         payable(t).transfer(1 ether);
-        string[10] memory tests = [
-            "testCreateContracts()",
-            "testEarlyFinalize()",
-            "testEarlyRefund()",
-            "testUnauthorizedRefund()",
-            "testUnauthorizedFinalize()",
-            "testJudgeFinalize()",
-            "testWinnerFinalize()",
-            "testPublicFinalize()",
-            "testJudgeRefund()",
-            "testSellerRefund()"
+        string[1] memory tests = [
+            "testCreateContracts()"
         ];
         TestLogger logger = new TestLogger();
         for (uint i = 0; i < tests.length; i++)
