@@ -14,32 +14,24 @@ export default function Home() {
   
   useEffect(() => {
     // initialize count once web3 contract is loaded
-    if (contract) getCount()
+    if (contract) updateCount()
   }, [contract]); 
 
-  const getCount = async () => {
-    const c = await contract.methods.get().call();
-    setCount(c);
+  const updateCount = async () => {
+    const newCount = await contract.methods.get().call();
+    setCount(newCount);
   }
 
   const increase = async () => {
-    try {
-      console.log("increase 1");
-      await contract.methods.inc().send({ from: account });
-      await getCount();
-    } catch(err) {
-      console.log(err);
-    }
+    console.log("increase 1");
+    await contract.methods.inc().send({ from: account });
+    await updateCount();
   }
 
   const decrease = async () => {
-    try {
-      console.log('decrease 1');
-      await contract.methods.dec().send({ from: account });
-      await getCount();
-    } catch(err) {
-      console.log(err);
-    }
+    console.log('decrease 1');
+    await contract.methods.dec().send({ from: account });
+    await updateCount();
   };
 
   const connectWalletHandler = async () => {
@@ -49,9 +41,10 @@ export default function Home() {
       const provider = new Web3.providers.HttpProvider('http://localhost:7545');
       var web3 = new Web3(provider);
       setWeb3(web3);
-
+      
+      // setup the account with the first one
       const accounts = await web3.eth.getAccounts();
-      setAccount(accounts[0]); // setup the account with the first one
+      setAccount(accounts[0]); 
 
       // create local contract instance
       setContract(blackjackContract(web3));
