@@ -7,8 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "compile": "solcjs --abi --include-path node_modules/ --base-path . blockchain/contracts/Blackjack.sol --output-dir blockchain/build",
-    "compile-payable": "solcjs --abi --include-path node_modules/ --base-path . blockchain/contracts/Payable.sol --output-dir blockchain/build"
+    "compile": "solcjs --abi --include-path node_modules/ --base-path . blockchain/contracts/Blackjack.sol --output-dir blockchain/build"
   },
   "dependencies": {
     "bootstrap": "^5.1.3",

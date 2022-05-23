@@ -8,7 +8,7 @@ contract Game {
     mapping (address => bool) private isStand;
     mapping (address => uint[]) private hands;
 
-    uint private lastJoin;
+    // uint private lastJoin;
     bool private isStart;
     bool private isEnd;
     bool private debug;
@@ -74,11 +74,11 @@ contract Game {
         lock = false;
     }
 
-    // **** make sure modify the function to view ****   get time 
-    function getTime() private returns(uint time) {
-        if (debug) {emit blockNum(block.number); }
-        return block.number;
-    }
+    // **** make sure modify the function to view ****  
+    // function getTime() private returns(uint time) {
+    //     if (debug) {emit blockNum(block.number); }
+    //     return block.number;
+    // }
 
     // JoinGame - allows players to join an existing game
     function joinGame(uint deposit, uint bet) public payable gameNotStarted {
@@ -86,10 +86,9 @@ contract Game {
         require(deposit + bet == msg.value, "deposit plus bet is not equal to your value");
         players.push(payable(msg.sender));    // add player to the players (payable)
 
-        // points[addr] = 0;
         deposits[msg.sender] = deposit;
         bets[msg.sender] = bet;
-        lastJoin = getTime();   // update last join time
+        // lastJoin = getTime();   // update last join time
 
         // start the game if this is the first player
         if (getPlayerNum() == 1) {
@@ -111,10 +110,6 @@ contract Game {
             1. get the deck from the contract and random draw two card for each player
             2 .update deck and player points 
             */
-            // uint[] memory hand = new uint[](10);
-            // hand.push(drawOne());
-            // hand.push(drawOne());
-            // hands[msg.sender] = hand;
             hands[msg.sender].push(drawOne());
             hands[msg.sender].push(drawOne());
         }
@@ -191,30 +186,17 @@ contract Game {
             1. randomly draw one card from the deck (consider shuffle the deck)
             2. update player points
         */
-        // uint temp = drawOne();
-        // uint[] storage hand = hands[msg.sender];
-        // hands[msg.sender] = hand;
         hands[msg.sender].push(drawOne());
     }
 
     // doubleDown - allows a player to double down
     function doubleDown() public payable gameStarted notStand isPlayer {
-        // require(!isDouble[msg.sender], "You have double downed.");
         require(msg.value == bets[msg.sender], "should match the previous bet"); // double down ***** ? use == to restrict the value
         bets[msg.sender] = 2 * bets[msg.sender];
         hit();
         stand();
-        // isDouble[msg.sender] = true;
     }
 
-    // reveal - the dealer reveals the card on hand
-    // function reveal() public gameStarted {
-    //     /* TODO
-    //         1. dealer reveal the hidden card
-    //         2. calculate the points dealer has on hand
-    //         3. call another function to end the game (with conditions)
-    //     */ 
-    // }
 
     // getPoints - returns the points of a player or dealer ----------DONE
     function getPoints(address addr) private view returns (uint value) {
@@ -280,7 +262,7 @@ contract Game {
             deck.push(i);
         }
 
-        lastJoin = getTime();
+        // lastJoin = getTime();
         isStart = false;
         isEnd = false;
         debug= true;
