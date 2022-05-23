@@ -5,121 +5,158 @@ import blackjackContract from "../blockchain/blackjack";
 import "bootstrap/dist/css/bootstrap.css";
 // import styles from '../styles/Home.module.css'
 
-
 export default function Home() {
   const [web3, setWeb3] = useState();
-  const [account, setAccount] = useState();
   const [contract, setContract] = useState();
-  // const [balance, setBalance] = useState(0);
   const [address, setAddress] = useState("");
   const [bet, setBet] = useState(0);
   const [deposit , setDeposit] = useState(0);
+  const [playerHand, setPlayerHand] = useState([]);
+  const [dealerHand, setDealerHand] = useState([]);
+  const [gameStarted, setGameStarted] = useState(false);
+  const [gameOver, setGameOver] = useState(false);
+
+  const [playerScore, setPlayerScore] = useState(0);
+  const [dealerScore, setDealerScore] = useState(0);
+
+  const [balance, setBalance] = useState(0);
+
+  const contractAddress = "0xD6596959a3B2Ae1275f996D80dc2a11cC7e2c129";
   
   useEffect(() => {
-
     async function fetchMyAPI() {
       if (window.ethereum) {
-        // await window.ethereum.enable();
-        
         const provider = new Web3.providers.HttpProvider('http://localhost:7545');
         var web3 = new Web3(provider);
         setWeb3(web3);
-        
-        // setup the account with the first one
-        const accounts = await web3.eth.getAccounts();
-        // console.log(accounts)
-        setAccount(accounts[0]); 
   
         // create local contract instance
-        setContract(blackjackContract(web3));
+        const ctr = blackjackContract(web3);
+        setContract(ctr);
+
         console.log('connect to web3');
       } else {
         alert("install metamask extension!");
       }
     }
-
     fetchMyAPI()
   }, [])
 
-  // useEffect(() => {
-  //   // initialize count once web3 contract is loaded
-  //   async function fetchData() {
-  //     if (contract) {
-  //       await getBalance();
-  //     }
-  //   }
-  //   fetchData();
-  // }, [contract]); 
-
-  // const getBalance = async () => {
-  //   const bal = await web3.eth.getBalance(account);
-  //   setBalance(web3.utils.fromWei(bal, 'ether'));
-  // }
-
-  // const pay = async () => {
-  //   const tx = await contract.methods.deposit().send(
-  //     { 
-  //       from: account,
-  //       value: '15000000000000000',
-  //       gas: 300000,
-  //       gasPrice: null
-  //     }
-  //   );
-  //   console.log(tx);
-  //   await getBalance();
-  // }
-
-  // const withdraw = async () => {
-  //   await contract.methods.withdraw().send({
-  //     from: account,
-  //     gas: 300000,
-  //     gasPrice: null
-  //   })
-  //   console.log(await web3.eth.getBalance(contract.options.address));
-  //   await getBalance();
-  // }
-
-  // const connectWalletHandler = async () => {
-  //   if (window.ethereum) {
-  //     // await window.ethereum.enable();
-      
-  //     const provider = new Web3.providers.HttpProvider('http://localhost:7545');
-  //     var web3 = new Web3(provider);
-  //     setWeb3(web3);
-      
-  //     // setup the account with the first one
-  //     // const accounts = await web3.eth.getAccounts();
-  //     // // console.log(accounts)
-  //     // setAccount(accounts[0]); 
-
-  //     // create local contract instance
-  //     setContract(blackjackContract(web3));
-  //   } else {
-  //     alert("install metamask extension!");
-  //   }
-  // };
+  useEffect(() => {
+    async function calScore(){
+      try {
+        setPlayerScore(await contract.methods.getPoints(address).call());
+        setDealerScore(await contract.methods.getPoints(contractAddress).call());
+        
+        const bal = await web3.eth.getBalance(address);
+        setBalance(web3.utils.fromWei(bal, 'ether'));
+        
+        console.log(await contract.methods.getDeck().call());
+      } catch(err){
+        console.log(err)
+      }
+    };
+    calScore();
+  }, [playerHand, dealerHand])
 
   const joinGame = async () => {
-    console.log(address);
-    console.log(bet);
-    console.log(deposit);
-    // console.log(account);
+    // console.log(address);
+    // console.log(bet);
+    // console.log(deposit);
     
-    try {
-      await contract.methods.joinGame(deposit, bet).send({ 
-        from: address,
-        value: deposit + bet,
-        gas: 3000000,
-        gasPrice: null
-      });
-    } catch (e) {
-        const data = e.data;
-        const txHash = Object.keys(data)[0]; // TODO improve
-        const reason = data[txHash].reason;
-        console.log(reason); // prints "This is error message"
-        // pop up reason
-        window.alert(reason);
-    }
+    const value = parseInt(bet) + parseInt(deposit);
+    // try {
+    
+    await contract.methods.joinGame(deposit, bet).send({ 
+      from: address,
+      value: value,
+      gas: 3000000,
+      gasPrice: null
+    });
+
+    console.log(contract.methods);
+    setGameStarted(await contract.methods.isGameStarted().call());
+    setPlayerHand(await getHand(address));
+    setDealerHand(await getHand(contractAddress));
+    // setPlayerScore(await contract.methods.getPoints(address).call());
+    // setDealerScore(await contract.methods.getPoints(contractAddress).call());
+
+    // } catch (e) {
+    //     const data = e.data;
+    //     const txHash = Object.keys(data)[0]; // TODO improve
+    //     const reason = data[txHash].reason;
+    //     console.log(reason); // prints "This is error message"
+    //     // pop up reason
+    //     window.alert(reason);
+    // }
+  }
+
+  const hitHandle = async () => {
+    await contract.methods.hit().send({
+      from: address,
+      gas: 3000000,
+      gasPrice: null
+    });
+
+    setPlayerHand(await getHand(address));
+    setDealerHand(await getHand(contractAddress));
+    setGameStarted(await contract.methods.isGameStarted().call());
+    setGameOver(await contract.methods.isGameEnded().call());
+  }
+
+  const getHand = async (address) => {
+    const hand = await contract.methods.getHand().call({
+      from: address,
+      gas: 300000,
+      gasPrice: null
+    });
+
+    // console.log(hand);
+
+    return hand;
+  }
+
+  const standHandle = async () => {
+    await contract.methods.stand().send({
+      from: address,
+      gas: 300000,
+      gasPrice: null
+    });
+
+    // const checkStand = await contract.methods.checkStand().call({
+    //   from: address,
+    //   gas: 300000,
+    //   gasPrice: null
+    // });
+
+    setGameOver(await contract.methods.isGameEnded().call());
+  }
+
+  const doubleHandle = async () => {
+    await contract.methods.doubleDown().send({
+      from: address,
+      value: parseInt(bet),
+      gas: 300000,
+      gasPrice: null
+    });
+
+    setPlayerHand(await getHand(address));
+    setDealerHand(await getHand(contractAddress));
+    setGameStarted(await contract.methods.isGameStarted().call());
+    setGameOver(await contract.methods.isGameEnded().call());
+  }
+
+  const withdrawHandle = async () => {
+    await contract.methods.withdraw().send({
+      from: address,
+      gas: 3000000,
+      gasPrice: null
+    })
+
+    setGameStarted(await contract.methods.isGameStarted().call());
+    setGameOver(await contract.methods.isGameEnded().call());
+    setPlayerHand([]);
+    setDealerHand([]);
   }
 
   return (
@@ -147,44 +184,47 @@ export default function Home() {
           <div className="col-md-2"/>
           <div className="col-md-4 mb-3">
             <label htmlFor="inputEmail4">Address</label>
-            <input type="text" className="form-control" id="inputEmail4" placeholder="Address" value={address} onChange={e => setAddress(e.target.value)}/>
+            <input type="text" className="form-control" id="inputEmail4" placeholder="Address" value={address} onChange={e => setAddress(e.target.value)} disabled={gameStarted}/>
           </div>
           <div className="col-md mb-3">
             <label htmlFor="deposit">Deposit</label>
-            <input type="text" className="form-control" id="deposit" placeholder="Deposit" value={deposit} onChange={e => setDeposit(e.target.value)}/>
+            <input type="text" className="form-control" id="deposit" placeholder="Deposit" value={deposit} onChange={e => setDeposit(e.target.value)} disabled={gameStarted}/>
           </div>
           <div className="col-md mb-3">
             <label htmlFor="bet">Bet</label>
-            <input type="text" className="form-control" id="bet" placeholder="Bet" value={bet} onChange={e => setBet(e.target.value)}/>
+            <input type="text" className="form-control" id="bet" placeholder="Bet" value={bet} onChange={e => setBet(e.target.value)} disabled={gameStarted}/>
           </div>
           <div className="col-md-2">
             <label htmlFor="join-game"></label>
-            <button className="btn btn-outline-secondary d-flex" type="submit" id="join-game" onClick={joinGame}>Join Game</button>
+            <button className="btn btn-outline-secondary d-flex" type="submit" id="join-game" onClick={joinGame} disabled={gameStarted}>Join Game</button>
           </div>
         </div>
 
-        {/* <div className="row">
-          <div className="col-12">
-            <h4>My Address: {account}</h4>
+        <div className="row">
+          <div className="col-md-12 text-center">
+            <div className="btn-group">
+            <button className="btn btn-outline-secondary" type="submit" id="hit" onClick={hitHandle} disabled={gameOver}>Hit</button>
+            <button className="btn btn-outline-secondary" type="submit" id="stand" onClick={standHandle} disabled={gameOver}>Stand</button>
+            <button className="btn btn-outline-secondary" type="submit" id="double-down" onClick={doubleHandle} disabled={gameOver}>Double Down</button>
+            <button className="btn btn-outline-secondary" type="submit" id="hit" onClick={withdrawHandle} disabled={!gameOver}>Withdraw</button>
+            </div>
           </div>
         </div>
-        <div className="row">
-          <div className="col-12">
-            <h4>My Balance: {balance} Ether</h4>
+
+        <div className="row mt-4">
+          <div className="col-md-12 text-center">
+            <h4>Player hand</h4>
+            {playerHand.map((card, i) => <p key={i}>{card}</p>)}
+            <h4>Dealer hand</h4>
+            {dealerHand.map((card, i) => <p key={i}>{card}</p>)}
+
+            <h5>Game started: {gameStarted ? "yes": "no"}</h5>
+            <h5>Game ended: {gameOver ? "yes": "no"}</h5>
+            <h5>Player Score: {playerScore}</h5>
+            <h5>Dealer Score: {dealerScore}</h5>
+            <h5>Player Balance: {balance}</h5>
           </div>
         </div>
-        <div className="row">
-          <div className="col-3">
-            <button className="btn btn-primary" onClick={pay}>
-              Pay
-            </button>
-          </div>
-          <div className="col-3">
-            <button className="btn btn-primary" onClick={withdraw}>
-              Withdraw
-            </button>
-          </div>
-        </div> */}
       </main>
 
       {/* <footer className={styles.footer}>
