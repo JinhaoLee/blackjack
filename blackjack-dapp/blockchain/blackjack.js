@@ -156,7 +156,7 @@ const blackjackApi = [
 const blackjackContract = web3 => {
     return new web3.eth.Contract(
         blackjackApi, 
-        '0xD6596959a3B2Ae1275f996D80dc2a11cC7e2c129'
+        '0xf1e018C4F604D3063b5B31a2F500b77F348D5fEc'
     )
 }
 

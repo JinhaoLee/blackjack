@@ -21,7 +21,9 @@ export default function Home() {
 
   const [balance, setBalance] = useState(0);
 
-  const contractAddress = "0xD6596959a3B2Ae1275f996D80dc2a11cC7e2c129";
+  const contractAddress = "0xf1e018C4F604D3063b5B31a2F500b77F348D5fEc";
+  const cards = ['A',2,3,4,5,6,7,8,9,10,'J','Q','K'];
+  const suits = ['♦','♣','♥','♠'];
   
   useEffect(() => {
     async function fetchMyAPI() {
@@ -51,7 +53,7 @@ export default function Home() {
         const bal = await web3.eth.getBalance(address);
         setBalance(web3.utils.fromWei(bal, 'ether'));
         
-        console.log(await contract.methods.getDeck().call());
+        // console.log(await contract.methods.getDeck().call());
       } catch(err){
         console.log(err)
       }
@@ -74,7 +76,6 @@ export default function Home() {
       gasPrice: null
     });
 
-    console.log(contract.methods);
     setGameStarted(await contract.methods.isGameStarted().call());
     setPlayerHand(await getHand(address));
     setDealerHand(await getHand(contractAddress));
@@ -111,8 +112,6 @@ export default function Home() {
       gasPrice: null
     });
 
-    // console.log(hand);
-
     return hand;
   }
 
@@ -123,12 +122,9 @@ export default function Home() {
       gasPrice: null
     });
 
-    // const checkStand = await contract.methods.checkStand().call({
-    //   from: address,
-    //   gas: 300000,
-    //   gasPrice: null
-    // });
-
+    setPlayerHand(await getHand(address));
+    setDealerHand(await getHand(contractAddress));
+    setGameStarted(await contract.methods.isGameStarted().call());
     setGameOver(await contract.methods.isGameEnded().call());
   }
 
@@ -159,6 +155,17 @@ export default function Home() {
     setDealerHand([]);
   }
 
+  const getCard = (card) => {
+    const num = parseInt(card);
+    const suit = suits[Math.trunc(num / 14)];
+    const value = cards[(num-1) % 13];
+
+    return {
+      suit: suit,
+      value: value
+    }
+  }
+
   return (
     <div>
       <Head>
@@ -173,11 +180,6 @@ export default function Home() {
             <h1>Blackjack</h1>
             <p>An Ethereum Blackjack Dapp</p>
           </div>
-          {/* <div className="col-12">
-            <button className="btn btn-primary" onClick={connectWalletHandler}>
-              Connect Wallet
-            </button>
-          </div> */}
         </div>
         
         <div className="row">
@@ -212,11 +214,19 @@ export default function Home() {
         </div>
 
         <div className="row mt-4">
-          <div className="col-md-12 text-center">
+          <div className="col-md"/>
+          <div className="col-md-3 text-center">
             <h4>Player hand</h4>
-            {playerHand.map((card, i) => <p key={i}>{card}</p>)}
+            {playerHand.map((card, i) => {
+              const cardObj = getCard(card);
+              return <div className="card mt-2" key={i} style={{height: '100px'}}>{cardObj.suit} {cardObj.value}</div>;
+            })}
+
             <h4>Dealer hand</h4>
-            {dealerHand.map((card, i) => <p key={i}>{card}</p>)}
+            {dealerHand.map((card, i) => {
+              const cardObj = getCard(card);
+              return <div className="card mt-2" key={i} style={{height: '100px'}}>{cardObj.suit} {cardObj.value}</div>;
+            })}
 
             <h5>Game started: {gameStarted ? "yes": "no"}</h5>
             <h5>Game ended: {gameOver ? "yes": "no"}</h5>
@@ -224,21 +234,9 @@ export default function Home() {
             <h5>Dealer Score: {dealerScore}</h5>
             <h5>Player Balance: {balance}</h5>
           </div>
+          <div className="col-md"/>
         </div>
       </main>
-
-      {/* <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <span className={styles.logo}>
-            <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
-          </span>
-        </a>
-      </footer> */}
     </div>
   );
 }
