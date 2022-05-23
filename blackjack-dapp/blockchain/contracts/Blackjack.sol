@@ -7,27 +7,23 @@ contract Game {
     mapping (address => uint) private bets;
     mapping (address => bool) private isStand;
     mapping (address => uint[]) private hands;
+    mapping (address => uint) private refunds;
 
     // uint private lastJoin;
     bool private isStart;
     bool private isEnd;
-    bool private debug;
     bool private lock;
 
     uint[] private deck;
     address private dealer;
     address payable[] private players;
     
+    uint private randNonce;
     uint constant DEALER_MIN_POINTS = 17;
     uint constant MAX_POINTS = 21;
-    
-    // debugging events
-    event blockNum(uint value);
-    event add(address addr);
-    event dp(uint value);
-    event bt(uint value);
 
     constructor() {
+        randNonce = 0;
         dealer = address(this);
         initGame();
     }
@@ -67,6 +63,11 @@ contract Game {
         _;
     }
 
+    modifier notAPlayer() {
+        require(deposits[msg.sender] == 0, "You are already a player");
+        _;
+    }
+
     modifier notReEntrancy() {
         require(!lock, "can't re-entry attack");
         lock = true;
@@ -74,14 +75,20 @@ contract Game {
         lock = false;
     }
 
-    // **** make sure modify the function to view ****  
-    // function getTime() private returns(uint time) {
-    //     if (debug) {emit blockNum(block.number); }
-    //     return block.number;
-     // }
+    // get block number
+    function getTime() private view returns(uint time) {
+        return block.number;
+    }
+
+    // random number generator (---RNG--- Royal Never Give Up!)
+    function rng() private returns(uint){
+        // increase nonce
+        randNonce++; 
+        return uint(keccak256(abi.encodePacked(getTime(), msg.sender, randNonce))) % getDeckLength();
+    }
 
     // JoinGame - allows players to join an existing game
-    function joinGame(uint deposit, uint bet) public payable gameNotStarted {
+    function joinGame(uint deposit, uint bet) public payable gameNotStarted notAPlayer {
         require(deposit >= 2 * bet && getPlayerNum() <= 5, "make sure deposit is two times larger than bet");    // make sure deposit is greater than bet
         require(deposit + bet == msg.value, "deposit plus bet is not equal to your value");
         
@@ -89,7 +96,6 @@ contract Game {
 
         deposits[msg.sender] = deposit;
         bets[msg.sender] = bet;
-        // lastJoin = getTime();   // update last join time
 
         // start the game if this is the first player
         if (getPlayerNum() == 1) {
@@ -100,37 +106,29 @@ contract Game {
     // startGame - allows the dealer to start the game after someone joined
     function startGame() private gameNotStarted {
         require(getPlayerNum() > 0, "Not enough players");
-        // require(getTime() - lastJoin == 3, "Wait until more players join the game.");
 
         // draw one card for dealder
         hands[dealer].push(drawOne());
 
         for (uint i=0; i < getPlayerNum(); i++)
         {   
-            /* TODO  
-            1. get the deck from the contract and random draw two card for each player
-            2 .update deck and player points 
-            */
-            hands[msg.sender].push(drawOne());
-            hands[msg.sender].push(drawOne());
+            hands[players[i]].push(drawOne());
+            hands[players[i]].push(drawOne());
         }
 
         isStart = true;
     }
 
     function drawOne() private returns (uint) {
-        uint temp = deck[deck.length - 1];
+        uint i = rng();
+        uint temp = deck[i];
+        deck[i] = deck[deck.length-1];
         deck.pop();
         return temp;
     }
 
     // endGame - allows dealer to end the game -- Can only be called by the dealer
     function endGame() private gameStarted areAllPlayersStand {
-        /*  TODO
-            1. only the dealer can call this function (properly work)
-            2. need to check all players have standed the game
-            3. might need to call withdraw as the game has ended.
-        */
         isEnd = true;
 
         hands[dealer].push(drawOne());
@@ -183,11 +181,11 @@ contract Game {
 
     // hit - allows a player to hit
     function hit() public gameStarted notStand isPlayer {
-        /* TODO
-            1. randomly draw one card from the deck (consider shuffle the deck)
-            2. update player points
-        */
+        require(getPoints(msg.sender) <= 21, "You bust!!!");
         hands[msg.sender].push(drawOne());
+        if(getPoints(msg.sender) > 21){
+            stand();
+        }
     }
 
     // doubleDown - allows a player to double down
@@ -198,9 +196,8 @@ contract Game {
         stand();
     }
 
-
     // getPoints - returns the points of a player or dealer ----------DONE
-    function getPoints(address addr) private view returns (uint value) {
+    function getPoints(address addr) public view returns (uint value) {
         uint[] memory hand = hands[addr];
         uint points = 0;
         for (uint i=0; i<hand.length; i++) {
@@ -209,21 +206,17 @@ contract Game {
         return points;
     }
 
+    // getCardPoints - returns the value of a card
     function getCardPoints(uint card) private pure returns (uint value) {
         uint points = card % 13;
-        if (points >= 10) {
+        if (points >= 10 || points == 0) {
             return 10;
         } 
         return points;
     }
 
     // withdraw - dealer or playes can withdraw money 
-    function withdraw() public payable notReEntrancy GameEnded isPlayer {
-        /* TODO
-            1. refund money iff something bad happened
-            2. allow winners to withdraw their money
-            3. re-entency attack
-        */
+    function withdraw() public payable notReEntrancy isPlayer GameEnded {
         uint desposit = deposits[msg.sender];
         deposits[msg.sender] = 0;
         (bool despositSuccess, ) = msg.sender.call{value:desposit}("");
@@ -231,6 +224,7 @@ contract Game {
 
         uint bet = bets[msg.sender];
         bets[msg.sender] = 0;
+        require(address(this).balance > 2 * bet, "Not enough money in contract!");
         (bool betSuccess, ) = msg.sender.call{value: bet*2}("");
         require(betSuccess, "Bet refund failed.");
 
@@ -250,32 +244,23 @@ contract Game {
             }
         }
 
-        if (canReset) {
-            initGame();
-        } 
+        // Reset game
+        if (canReset) { initGame(); } 
     }
 
     function initGame() private {
         players = new address payable[](0);
         deck = new uint[](0);
+        hands[dealer] = new uint[](0);
 
+        // recreate a deck
         for(uint i=1; i<=52; i++){
             deck.push(i);
-        }
-
-        // lastJoin = getTime();
+        } 
+        
+        // reset all conditions
         isStart = false;
         isEnd = false;
-        debug= true;
-    }
-
-    // Black Jack
-    function blackJack() private gameStarted returns (bool isWin) {
-        /* TODO
-            1. conditions and cards
-            2. modify the winner
-            3. return bool
-        */
     }
 
     // get length of a list
@@ -283,6 +268,39 @@ contract Game {
         return players.length;
     } 
 
+    // get card length 
+    function getDeckLength() private view returns(uint) {  
+        return deck.length;
+    } 
+
     //can receive money
     receive() external payable {}
+
+    /** 
+        The following public functions are for client displaying.
+    */
+
+    function getBet() public view isPlayer returns (uint) {  
+        return bets[msg.sender];
+    } 
+
+    function getHand() public view returns (uint[] memory) {
+        return hands[msg.sender];
+    }
+
+    function checkStand() public view returns (bool) {
+        return isStand[msg.sender];
+    }
+
+    function isGameEnded() public view returns (bool) {
+        return isEnd;
+    }
+
+    function isGameStarted() public view returns (bool) {
+        return isStart;
+    }
+
+    function getDeck() public view returns (uint[] memory) {
+        return deck;
+    }
 }
