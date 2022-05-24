@@ -1,4 +1,4 @@
-const blackjackApi = [
+const blackjackAbi = [
 	{
 		"inputs": [],
 		"name": "doubleDown",
@@ -155,8 +155,8 @@ const blackjackApi = [
 
 const blackjackContract = web3 => {
     return new web3.eth.Contract(
-        blackjackApi, 
-        '0xf1e018C4F604D3063b5B31a2F500b77F348D5fEc'
+        blackjackAbi, 
+        '0xf334D0A7EC82b3C0f083c0C77d79AA237eAE8e5d'
     )
 }
 

@@ -183,7 +183,7 @@ contract Game {
     function hit() public gameStarted notStand isPlayer {
         require(getPoints(msg.sender) <= 21, "You bust!!!");
         hands[msg.sender].push(drawOne());
-        if(getPoints(msg.sender) > 21){
+        if(getPoints(msg.sender) >= 21){
             stand();
         }
     }
@@ -224,7 +224,7 @@ contract Game {
 
         uint bet = bets[msg.sender];
         bets[msg.sender] = 0;
-        require(address(this).balance > 2 * bet, "Not enough money in contract!");
+        require(address(this).balance > 2*bet, "Not enough money in contract!");
         (bool betSuccess, ) = msg.sender.call{value: bet*2}("");
         require(betSuccess, "Bet refund failed.");
 

@@ -3,6 +3,7 @@ import Web3 from "web3";
 import { useState, useEffect } from "react";
 import blackjackContract from "../blockchain/blackjack";
 import "bootstrap/dist/css/bootstrap.css";
+import Image from 'next/image'
 // import styles from '../styles/Home.module.css'
 
 export default function Home() {
@@ -10,7 +11,7 @@ export default function Home() {
   const [contract, setContract] = useState();
   const [address, setAddress] = useState("");
   const [bet, setBet] = useState(0);
-  const [deposit , setDeposit] = useState(0);
+  // const [deposit , setDeposit] = useState(0);
   const [playerHand, setPlayerHand] = useState([]);
   const [dealerHand, setDealerHand] = useState([]);
   const [gameStarted, setGameStarted] = useState(false);
@@ -19,12 +20,13 @@ export default function Home() {
   const [playerScore, setPlayerScore] = useState(0);
   const [dealerScore, setDealerScore] = useState(0);
 
+  const [contractBalance, setContractBalance] = useState(0);
+
   const [balance, setBalance] = useState(0);
 
-  const contractAddress = "0xf1e018C4F604D3063b5B31a2F500b77F348D5fEc";
-  const cards = ['A',2,3,4,5,6,7,8,9,10,'J','Q','K'];
-  const suits = ['♦','♣','♥','♠'];
-  
+  const contractAddress = "0xf334D0A7EC82b3C0f083c0C77d79AA237eAE8e5d";
+  const cards = ['ace',2,3,4,5,6,7,8,9,10,'jack','queen','king'];
+  const suits = ['diamonds','clubs','hearts','spades'];
   useEffect(() => {
     async function fetchMyAPI() {
       if (window.ethereum) {
@@ -53,6 +55,7 @@ export default function Home() {
         const bal = await web3.eth.getBalance(address);
         setBalance(web3.utils.fromWei(bal, 'ether'));
         
+        setContractBalance(await web3.eth.getBalance(contractAddress));
         // console.log(await contract.methods.getDeck().call());
       } catch(err){
         console.log(err)
@@ -66,12 +69,12 @@ export default function Home() {
     // console.log(bet);
     // console.log(deposit);
     
-    const value = parseInt(bet) + parseInt(deposit);
+    const value = parseInt(bet);
     // try {
     
-    await contract.methods.joinGame(deposit, bet).send({ 
+    await contract.methods.joinGame(value*2, value).send({ 
       from: address,
-      value: value,
+      value: value*3,
       gas: 3000000,
       gasPrice: null
     });
@@ -132,7 +135,7 @@ export default function Home() {
     await contract.methods.doubleDown().send({
       from: address,
       value: parseInt(bet),
-      gas: 300000,
+      gas: 3000000,
       gasPrice: null
     });
 
@@ -167,7 +170,7 @@ export default function Home() {
   }
 
   return (
-    <div>
+    <>
       <Head>
         <title>Blackjack</title>
         <meta name="description" content="An Ethereum Blackjack Dapp" />
@@ -177,22 +180,23 @@ export default function Home() {
       <main className="container">
         <div className="row mt-3 text-center">
           <div className="col-12">
-            <h1>Blackjack</h1>
-            <p>An Ethereum Blackjack Dapp</p>
+            <p className="fs-1 fw-bold">Blackjack</p>
+            <p className="fs-3">An Ethereum Blackjack Dapp</p>
+            <p>You have to enter your address and bet below. (deposit will be deducted by the double amounnt of bet.)</p>
           </div>
         </div>
         
         <div className="row">
           <div className="col-md-2"/>
-          <div className="col-md-4 mb-3">
+          <div className="col-md-5 mb-3">
             <label htmlFor="inputEmail4">Address</label>
             <input type="text" className="form-control" id="inputEmail4" placeholder="Address" value={address} onChange={e => setAddress(e.target.value)} disabled={gameStarted}/>
           </div>
-          <div className="col-md mb-3">
+          {/* <div className="col-md mb-3">
             <label htmlFor="deposit">Deposit</label>
             <input type="text" className="form-control" id="deposit" placeholder="Deposit" value={deposit} onChange={e => setDeposit(e.target.value)} disabled={gameStarted}/>
-          </div>
-          <div className="col-md mb-3">
+          </div> */}
+          <div className="col-md-2 mb-3">
             <label htmlFor="bet">Bet</label>
             <input type="text" className="form-control" id="bet" placeholder="Bet" value={bet} onChange={e => setBet(e.target.value)} disabled={gameStarted}/>
           </div>
@@ -205,38 +209,57 @@ export default function Home() {
         <div className="row">
           <div className="col-md-12 text-center">
             <div className="btn-group">
-            <button className="btn btn-outline-secondary" type="submit" id="hit" onClick={hitHandle} disabled={gameOver}>Hit</button>
-            <button className="btn btn-outline-secondary" type="submit" id="stand" onClick={standHandle} disabled={gameOver}>Stand</button>
-            <button className="btn btn-outline-secondary" type="submit" id="double-down" onClick={doubleHandle} disabled={gameOver}>Double Down</button>
-            <button className="btn btn-outline-secondary" type="submit" id="hit" onClick={withdrawHandle} disabled={!gameOver}>Withdraw</button>
+            <button className="btn btn-outline-secondary" type="submit" id="hit" onClick={hitHandle} disabled={gameOver || !gameStarted}>Hit</button>
+            <button className="btn btn-outline-secondary" type="submit" id="stand" onClick={standHandle} disabled={gameOver || !gameStarted}>Stand</button>
+            <button className="btn btn-outline-secondary" type="submit" id="double-down" onClick={doubleHandle} disabled={gameOver || !gameStarted}>Double Down</button>
+            <button className="btn btn-outline-secondary" type="submit" id="hit" onClick={withdrawHandle} disabled={!gameOver || !gameStarted}>Withdraw</button>
             </div>
           </div>
         </div>
-
+        
         <div className="row mt-4">
           <div className="col-md"/>
-          <div className="col-md-3 text-center">
-            <h4>Player hand</h4>
+          <div className="col-md-8 text-center">
+            { playerHand && playerHand.length ? <h4>Player hand</h4> : null }
             {playerHand.map((card, i) => {
               const cardObj = getCard(card);
-              return <div className="card mt-2" key={i} style={{height: '100px'}}>{cardObj.suit} {cardObj.value}</div>;
+              return <img key={i} width={100} hieght={145} src={`${cardObj.value}_of_${cardObj.suit}.png`}/>;
             })}
 
-            <h4>Dealer hand</h4>
+            { dealerHand && dealerHand.length ? <h4 className="mt-2">Dealer hand</h4> : null }
             {dealerHand.map((card, i) => {
               const cardObj = getCard(card);
-              return <div className="card mt-2" key={i} style={{height: '100px'}}>{cardObj.suit} {cardObj.value}</div>;
+              return <img key={i} width={100} hieght={145} src={`${cardObj.value}_of_${cardObj.suit}.png`}/>;
             })}
 
-            <h5>Game started: {gameStarted ? "yes": "no"}</h5>
+            {/* <h5>Game started: {gameStarted ? "yes": "no"}</h5>
             <h5>Game ended: {gameOver ? "yes": "no"}</h5>
             <h5>Player Score: {playerScore}</h5>
             <h5>Dealer Score: {dealerScore}</h5>
             <h5>Player Balance: {balance}</h5>
+            <h5>Contract Balance: {contractBalance}</h5> */}
+
+            { !gameOver
+              ? null
+              : <>
+                  { playerScore == dealerScore
+                    ? <p className="alert alert-secondary fs-3 mt-4">Tie! You can withdraw your deposit and bet now. 🤨</p>
+                    : playerScore > dealerScore && playerScore <= 21 ? 
+                      <p className="alert alert-primary fs-3 mt-4">You win! Remember can withdraw your deposit, bet and reward. 😎</p>
+                      : <p className="alert alert-danger fs-3 mt-4">You lose! Remember withdraw your deposit. 😭</p>
+                  }
+                </>
+            }
           </div>
           <div className="col-md"/>
         </div>
       </main>
-    </div>
+
+      <style jsx global>{`
+        body {
+          background: ${"white"};
+        }
+      `}</style>
+    </>
   );
 }
