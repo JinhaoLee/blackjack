@@ -3,15 +3,13 @@ import Web3 from "web3";
 import { useState, useEffect } from "react";
 import blackjackContract from "../blockchain/blackjack";
 import "bootstrap/dist/css/bootstrap.css";
-import Image from 'next/image'
-// import styles from '../styles/Home.module.css'
 
 export default function Home() {
   const [web3, setWeb3] = useState();
   const [contract, setContract] = useState();
   const [address, setAddress] = useState("");
   const [bet, setBet] = useState(0);
-  // const [deposit , setDeposit] = useState(0);
+
   const [playerHand, setPlayerHand] = useState([]);
   const [dealerHand, setDealerHand] = useState([]);
   const [gameStarted, setGameStarted] = useState(false);
@@ -20,13 +18,13 @@ export default function Home() {
   const [playerScore, setPlayerScore] = useState(0);
   const [dealerScore, setDealerScore] = useState(0);
 
-  const [contractBalance, setContractBalance] = useState(0);
+  // const [contractBalance, setContractBalance] = useState(0);
+  // const [balance, setBalance] = useState(0);
 
-  const [balance, setBalance] = useState(0);
-
-  const contractAddress = "0xf334D0A7EC82b3C0f083c0C77d79AA237eAE8e5d";
+  const contractAddress = "0xAE1561Ec9bEF831dcf6145cb5BEE5178805d6a51";
   const cards = ['ace',2,3,4,5,6,7,8,9,10,'jack','queen','king'];
   const suits = ['diamonds','clubs','hearts','spades'];
+
   useEffect(() => {
     async function fetchMyAPI() {
       if (window.ethereum) {
@@ -181,8 +179,8 @@ export default function Home() {
         <div className="row mt-3 text-center">
           <div className="col-12">
             <p className="fs-1 fw-bold">Blackjack</p>
-            <p className="fs-3">An Ethereum Blackjack Dapp</p>
-            <p>You have to enter your address and bet below. (deposit will be deducted by the double amounnt of bet.)</p>
+            <p className="fs-3">An Ethereum Dapp</p>
+            <p>You have to enter your address and bet below (deposit will be automatically deducted by the double amount of bet).</p>
           </div>
         </div>
         
@@ -190,7 +188,7 @@ export default function Home() {
           <div className="col-md-2"/>
           <div className="col-md-5 mb-3">
             <label htmlFor="inputEmail4">Address</label>
-            <input type="text" className="form-control" id="inputEmail4" placeholder="Address" value={address} onChange={e => setAddress(e.target.value)} disabled={gameStarted}/>
+            <input type="text" className="form-control" id="inputEmail4" placeholder="0xB5AF48BFFaa06CC7....." value={address} onChange={e => setAddress(e.target.value)} disabled={gameStarted}/>
           </div>
           {/* <div className="col-md mb-3">
             <label htmlFor="deposit">Deposit</label>
@@ -198,7 +196,7 @@ export default function Home() {
           </div> */}
           <div className="col-md-2 mb-3">
             <label htmlFor="bet">Bet</label>
-            <input type="text" className="form-control" id="bet" placeholder="Bet" value={bet} onChange={e => setBet(e.target.value)} disabled={gameStarted}/>
+            <input type="text" className="form-control" id="bet" placeholder="50" value={bet} onChange={e => setBet(e.target.value)} disabled={gameStarted}/>
           </div>
           <div className="col-md-2">
             <label htmlFor="join-game"></label>
@@ -243,10 +241,10 @@ export default function Home() {
               ? null
               : <>
                   { playerScore == dealerScore
-                    ? <p className="alert alert-secondary fs-3 mt-4">Tie! You can withdraw your deposit and bet now. 🤨</p>
+                    ? <p className="alert alert-secondary fs-3 mt-4">Tie! Remember withdraw your deposits and bets now. 🤨</p>
                     : playerScore > dealerScore && playerScore <= 21 ? 
-                      <p className="alert alert-primary fs-3 mt-4">You win! Remember can withdraw your deposit, bet and reward. 😎</p>
-                      : <p className="alert alert-danger fs-3 mt-4">You lose! Remember withdraw your deposit. 😭</p>
+                      <p className="alert alert-primary fs-3 mt-4">You win! Remember withdraw your deposits, bets and rewards. 😎</p>
+                      : <p className="alert alert-danger fs-3 mt-4">You lose! Remember withdraw your deposits. 😭</p>
                   }
                 </>
             }
